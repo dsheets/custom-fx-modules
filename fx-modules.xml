@@ -1,0 +1,234 @@
+<proposal>
+  <title>CSS/SVG FXTF Proposal: <b>Custom Filter Effects Modules</b></title>
+  <author>David Sheets</author>
+  <organization>Independent</organization>
+  <date>December 10, 2012</date>
+  <revision>1</revision>
+  <article>
+    <abstract>Filter Effects 1.0 enables an exciting new custom filter
+    capability for page authors to load programs to alter the
+    rendering of element geometry and shading. This proposal details a
+    design for the flexible use of this capability that integrates
+    custom filter modules into CSS and takes advantage of the design
+    of HTML, XML, HTTP, and URI.
+    </abstract>
+    <section>
+      <title>Introduction</title>
+      
+      <p>Custom filter effects will soon provide web developers with
+      easy-to-use, cross-platform, declarative element rendering
+      capabilities unmatched in any other environment. To describe the
+      graphical effects to be applied, developers will need to
+      indicate what functions to map over element meshes and element
+      pixels as well as parameters to those functions. There exist
+      many possible representations for this configuration information
+      but the thesis of this proposal is that, at minimum, this
+      functionality should be exposed in CSS and define generic resource
+      semantics in alignment with the rest of the Web.</p>
+
+      <p>The shaders that interpret the operational model described in
+      the Filter Effects 1.0 Working Draft may be expressed in a
+      number of different languages and dialects in the future. It is
+      a primary goal of this proposal to easily accomodate future
+      shading languages and effect package formats while providing an
+      easy and efficient interface to this sophisticated
+      functionality. By leveraging the existing design of CSS, HTML,
+      XML, and HTTP, <b>Custom Filter Effects Modules</b> achieves a
+      wide variety of flexible features at little specification cost
+      and minimal implementation cost.</p>
+
+      <p>It is important to distinguish the 4 different
+      abstractions we are concerned with in this work:</p>
+      <ul>
+        <li>FX Languages</li>
+        <li>FX Operational Models</li>
+        <li>FX Function Resources</li>
+        <li>FX Module Parameterizations</li>
+      </ul>
+
+      <p><i>FX Languages</i> are specifications of the algebraic
+      expressions that may be used in <i>FX Function
+      Resources</i>. Many different languages may be used with any
+      individual <i>FX Operational Model</i> and thus with a given
+      <i>FX Module Parameterization</i>. <i>FX Languages</i> are
+      represented by Internet Standard Media Types as used in HTTP
+      Accept and Content-Type headers.</p>
+
+      <p><i>FX Operational Models</i> are specifications of the data
+      types that may be used in <i>FX Module
+      Parameterizations</i>. <i>FX Operational Models</i> loosely
+      correspond to CSS 3 Font formats but it is important to note
+      that, by their nature, operational models may vary significantly
+      in behavior. Filter Effects 1.0 defines a single <i>FX
+      Operational Model</i> detailing discretization of element
+      surfaces into meshes for deformation and color blending
+      operations on element texels as well as parameters to those
+      transformations.</p>
+
+      <p><i>FX Function Resources</i> are the actual expressions of
+      mesh and pixel transforms in a particular <i>FX Language</i>. At
+      the present time, most <i>FX Function Resources</i> are expressed
+      in OpenGL ES 2.0 GLSL 1.0 (ESSL) as this <i>FX Language</i> is
+      also in use by Khronos' WebGL.
+      </p>
+
+      <p><i>FX Module Parameterizations</i> are the primary focus of
+      this document as concrete expressions of the specific
+      combination of <i>FX Function Resources</i> with parameters for
+      an individual use scenario.
+      </p>
+    </section>
+    <section>
+      <title>Parameterization as CSS Expression</title>
+
+      <p>A means of defining and naming specific parameterizations of
+      shader function resources is required for abstraction of filter
+      effects. In CSS Level 3 modules, this kind of abstraction is
+      accomplished with @-rules that group resource links with their
+      associated parameters. To satisfy the use cases of the Filter
+      Effects 1.0 Working Draft, specifically functional maps
+      over element mesh vertices and element pixel values, any
+      abstraction will require expressions of or links to expressions
+      of these maps. To support simple creation, incorporation, and
+      customization of custom filter effects in CSS authors'
+      workflows, it makes sense to expose the operational model of
+      Filter Effects 1.0 Working Draft to CSS using CSS
+      syntax.</p>
+
+      <p>Below is an example of an <i>FX Module Parameterization</i>
+      in a named @filter rule with two different <i>FX Operational
+      Models</i>, <b>fx1</b> and <b>msfx1</b>. As these rules are
+      given the same name, 'curl', they should be equivalent effects
+      chosen between by the user agent according to its support for
+      the <b>fx1</b> and <b>msfx1</b> operational models.</p>
+
+      <pre>
+@filter curl {
+  type: "fx1";
+  meshfn: url("/fx/curl.fx#mesh") url("/fx/curl.fx#mesh-fallback");
+  pxfn: url("/fx/curl.fx#px");
+  mesh: 4 4;
+  mix: source-in multiply;
+  parameters: identityMatrix mat3(1,0,0,0,1,0,0,0,1);
+}
+
+@filter curl {
+  type: "msfx1";
+  ms-src: url("/fx/curl.fx#ms-fx-bundle");
+}
+
+filter: custom(curl);
+      </pre>
+
+      <p>Among the benefits of this approach are ease of
+      modification/customization and ability for effects to be
+      in-lined in independent or embedded stylesheets. It is
+      anticipated that libraries of custom filter effects modules will
+      be constructed for easy use of advanced rendering
+      capabilities. These libraries may be effectively abstracted
+      through the use of the CSS @import rule. If a significant number
+      of operational models come into use, conditional library loading
+      may be achieved with @import media queries. Finally, these
+      filter effects libraries, being described in CSS, may bundle
+      related stylesheet declarations.</p>
+    </section>
+    <section>
+      <title>Function Resource Request HTTP Behavior</title>
+
+      <p>In every high-performance web application, both network
+      throughput and network latency must be carefully managed. To
+      reduce required throughput, a web application should strive to
+      eliminate the transmission of unnecessary or unused data. To
+      reduce latency, a web application should keep round-trip
+      dependency depth low and use fewer requests when possible.</p>
+
+      <p>In pursuit of these goals, <b>Custom Filter Effects
+      Modules</b> uses media types and fragment identifiers to
+      retrieve only the function resources and packages that the
+      client can understand in as few requests as
+      possible. Specifically, every client will have a set of <i>FX
+      Languages</i> and container formats which it can interpret in
+      each of its <i>FX Operational Models</i>. A client should issue
+      a single HTTP request for each distinct (excluding fragment
+      identifier) <i>FX Function Resource</i> URI with an Accept
+      header containing the union of the media types for every
+      different <i>FX Operational Model</i> in which that URI is
+      referenced. In this way, the client informs the server what
+      types of languages and packages it can interpret so the server
+      will not transmit uninterpretable data.
+      </p>
+
+      <p>In the previous example, the user agent may issue a request
+      for the resolution of "/fx/curl.fx" against the ambient base URI
+      with an Accept header specifying "text/html, application/xml,
+      application/essl, application/othersl, application/vnd.msfx+xml"
+      as it understands both the "fx1" model and uses ESSL or OtherSL
+      as <i>FX Language</i> in that model with HTML or generic XML
+      packaging as well as the "msfx1" model which uses a proprietary
+      effect packaging format and language. The server may respond to
+      this request with a message indicating Content-Type of
+      "application/xml" encapsulating "application/essl" source which
+      the client will then interpret as detailed below.</p>
+    </section>
+    <section>
+      <title>HTML and XML Fragment Integration with Function Resources</title>
+
+      <p>As demonstrated in the previous section, the use of fragment
+      identifiers can greatly reduce the number of required HTTP
+      requests for function resources through request collation. This
+      generic and fundamental feature of the Web platform requires
+      user agent knowledge of specific compound media types. We
+      address two major compound media types, HTML and XML, that
+      immediately deliver enormous value to the fledgling custom
+      filter effects ecosystem.
+      </p>
+
+      <p>The HTML 'id' attribute identifies page elements that
+      correspond to secondary resources and may be referred to with
+      fragment identifiers. <i>FX Function Resources</i> may be
+      enclosed in HTML script tags and identified by their unique
+      ids. This functionality is free as user agents already
+      understand the compound nature of HTML resources. By requiring
+      only that referenced <i>FX Function Resources</i> ultimately
+      resolve to an expression in an interpretable <i>FX Language</i>,
+      <b>Custom Filter Effects Modules</b> enable single-request (of
+      HTML) applications and easy dynamic effect loading. As HTML can
+      also be used as an effect transport format, it can serve as
+      immediately renderable documentation of a given effect.</p>
+
+      <p>The <a href="http://www.w3.org/TR/xml-id/">standardization of
+      the xml:id generic attribute</a> provides every generic XML
+      interpreter with a simple way to resolve secondary resources. By
+      requesting "application/xml" as one of the types for an <i>FX
+      Function Resource</i>, a user agent indicates that it can
+      understand generic XML resources and shading language secondary
+      resources through the use of xml:id and fragment
+      identifiers. This facility allows web developers to use any XML
+      vocabulary they like to transport their filter effects.</p>
+    </section>
+    <section>
+      <title>Conclusion</title>
+
+      <p>By specifying an <i>FX Module Parameterization</i> data type
+      for each <i>FX Operational Model</i> using existing CSS syntax,
+      <b>Custom Filter Effects Modules</b> eases the understanding,
+      debugging, and customization of effects by CSS authors. In doing
+      this, all semantics for filter effect rendering are contained in
+      either CSS or a referenced <i>FX Function Resource</i>. <i>FX
+      Function Resources</i> themselves become first-class web
+      resources easily used in other contexts like WebGL.</p>
+
+      <p>Another benefit to this approach is the minimal semantic
+      implementation and heavy reliance on well-established web
+      standards like URI, HTTP, HTML, and XML. A hallmark of these
+      standards is their forward-looking extensibility
+      features. <b>Custom Filter Effects Modules</b> leverages these
+      extensibility features to immediately enable a host of powerful
+      techniques for sophisticated page rendering.</p>
+
+      <p><a href="http://www.w3.org/TR/webarch/#orthogonal-specs">
+        Identification, interaction, and representation are orthogonal concepts, meaning that technologies used for identification, interaction, and representation may evolve independently.
+      </a></p>
+    </section>
+  </article>
+</proposal>
