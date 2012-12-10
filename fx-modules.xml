@@ -3,7 +3,7 @@
   <author>David Sheets</author>
   <organization>Independent</organization>
   <date>December 10, 2012</date>
-  <revision>1</revision>
+  <revision>2</revision>
   <article>
     <abstract>Filter Effects 1.0 enables an exciting new custom filter
     capability for page authors to load programs to alter the
@@ -229,6 +229,17 @@ filter: custom(curl);
       <p><a href="http://www.w3.org/TR/webarch/#orthogonal-specs">
         Identification, interaction, and representation are orthogonal concepts, meaning that technologies used for identification, interaction, and representation may evolve independently.
       </a></p>
+    </section>
+
+    <section>
+      <title>Thanks</title>
+      
+      <p>Dirk Schulze and his team at Adobe provided many of the basic
+      ideas as well as the motivation for this proposal. The CSS/SVG
+      Filter Effects Task Force has been crucial to bringing advanced
+      graphical capabilities to the Web and without their devotion to
+      technical excellence none of this would be possible. Thank
+      you!</p>
     </section>
   </article>
 </proposal>
